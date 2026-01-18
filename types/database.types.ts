@@ -15,6 +15,8 @@ export interface Database {
           user_id: string
           name: string
           email: string
+          phone: string | null
+          address: string | null
           logo_url: string | null
           gst_number: string | null
           primary_color: string
@@ -26,6 +28,8 @@ export interface Database {
           user_id: string
           name: string
           email: string
+          phone?: string | null
+          address?: string | null
           logo_url?: string | null
           gst_number?: string | null
           primary_color?: string
@@ -37,6 +41,8 @@ export interface Database {
           user_id?: string
           name?: string
           email?: string
+          phone?: string | null
+          address?: string | null
           logo_url?: string | null
           gst_number?: string | null
           primary_color?: string
@@ -94,6 +100,7 @@ export interface Database {
           amount: number
           date: string
           payment_status: 'Paid' | 'Pending' | 'Overdue'
+          invoice_type: 'membership' | 'service' | 'renewal'
           created_at: string
         }
         Insert: {
@@ -104,6 +111,7 @@ export interface Database {
           amount: number
           date?: string
           payment_status?: 'Paid' | 'Pending' | 'Overdue'
+          invoice_type?: 'membership' | 'service' | 'renewal'
           created_at?: string
         }
         Update: {
@@ -114,6 +122,7 @@ export interface Database {
           amount?: number
           date?: string
           payment_status?: 'Paid' | 'Pending' | 'Overdue'
+          invoice_type?: 'membership' | 'service' | 'renewal'
           created_at?: string
         }
       }

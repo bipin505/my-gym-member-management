@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { createClient } from '@/utils/supabase/client'
 import { useGymBranding } from '@/hooks/useGymBranding'
-import { Download, Mail, Search, FileText } from 'lucide-react'
+import { Download, Search, FileText } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/utils/date'
 import { generateInvoicePDF, downloadPDF } from '@/utils/pdf'
 import { Database } from '@/types/database.types'
@@ -33,7 +33,6 @@ export default function InvoicesPage() {
   const [filteredGroupedInvoices, setFilteredGroupedInvoices] = useState<GroupedInvoices[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [sendingEmail, setSendingEmail] = useState<string | null>(null)
   const { gymId, name, logoUrl, primaryColor } = useGymBranding()
   const supabase = createClient()
 
@@ -119,7 +118,7 @@ export default function InvoicesPage() {
     try {
       const { data: gym } = await supabase
         .from('gyms')
-        .select('email, gst_number')
+        .select('email, phone, address, gst_number')
         .eq('id', gymId!)
         .single()
 
@@ -138,17 +137,29 @@ export default function InvoicesPage() {
           amount: ms.amount
         })) || []
 
+      // Determine what to show based on invoice type
+      const invoiceType = invoice.invoice_type || 'membership'
+
+      // Logic:
+      // - 'membership': show plan + services (initial signup)
+      // - 'renewal': show plan + services (renewal)
+      // - 'service': show ONLY services, NO plan (service addition)
+      const showPlan = invoiceType === 'membership' || invoiceType === 'renewal'
+      const showServices = true // Always show services if they exist
+
       const pdfBlob = await generateInvoicePDF({
         invoiceNumber: invoice.invoice_number,
         date: invoice.date,
         memberName: invoice.members.name,
         memberPhone: invoice.members.phone,
         amount: invoice.amount,
-        planType: invoice.members.plan_type,
-        planAmount: member?.amount || 0,
-        services: services,
+        planType: showPlan ? invoice.members.plan_type : undefined,
+        planAmount: showPlan ? member?.amount || 0 : undefined,
+        services: showServices ? services : [],
         gymName: name,
         gymEmail: gym?.email || '',
+        gymPhone: gym?.phone || null,
+        gymAddress: gym?.address || null,
         gymGstNumber: gym?.gst_number || null,
         gymLogo: logoUrl,
         primaryColor: primaryColor,
@@ -161,87 +172,6 @@ export default function InvoicesPage() {
     }
   }
 
-  async function handleSendEmail(invoice: Invoice) {
-    setSendingEmail(invoice.id)
-
-    try {
-      const { data: gym } = await supabase
-        .from('gyms')
-        .select('email, gst_number')
-        .eq('id', gymId!)
-        .single()
-
-      // Fetch member data with services
-      const { data: member } = await supabase
-        .from('members')
-        .select('amount, member_services(*)')
-        .eq('id', invoice.member_id)
-        .single()
-
-      // Build services array
-      const services = member?.member_services
-        ?.filter((ms: any) => ms.is_active)
-        .map((ms: any) => ({
-          name: ms.service_name,
-          amount: ms.amount
-        })) || []
-
-      const pdfBlob = await generateInvoicePDF({
-        invoiceNumber: invoice.invoice_number,
-        date: invoice.date,
-        memberName: invoice.members.name,
-        memberPhone: invoice.members.phone,
-        amount: invoice.amount,
-        planType: invoice.members.plan_type,
-        planAmount: member?.amount || 0,
-        services: services,
-        gymName: name,
-        gymEmail: gym?.email || '',
-        gymGstNumber: gym?.gst_number || null,
-        gymLogo: logoUrl,
-        primaryColor: primaryColor,
-      })
-
-      // Convert blob to base64
-      const reader = new FileReader()
-      reader.readAsDataURL(pdfBlob)
-      reader.onloadend = async () => {
-        const base64data = reader.result as string
-
-        const response = await fetch('/api/send-invoice', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            to: gym?.email || 'member@example.com', // In production, get member's email
-            subject: `Invoice ${invoice.invoice_number} from ${name}`,
-            html: `
-              <h2>Invoice from ${name}</h2>
-              <p>Dear ${invoice.members.name},</p>
-              <p>Please find attached your invoice for ${formatCurrency(invoice.amount)}.</p>
-              <p>Invoice Number: ${invoice.invoice_number}</p>
-              <p>Date: ${formatDate(invoice.date)}</p>
-              <p>Thank you for your business!</p>
-            `,
-            pdfBase64: base64data.split(',')[1],
-            filename: `${invoice.invoice_number}.pdf`,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to send email')
-        }
-
-        alert('Invoice sent successfully!')
-      }
-    } catch (error) {
-      console.error('Error sending email:', error)
-      alert('Error sending invoice. Please check your Resend API key configuration.')
-    } finally {
-      setSendingEmail(null)
-    }
-  }
 
   return (
     <DashboardLayout>
@@ -336,27 +266,13 @@ export default function InvoicesPage() {
                               </span>
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleDownloadPDF(invoice)}
-                                  className="text-blue-600 hover:text-blue-900"
-                                  title="Download PDF"
-                                >
-                                  <Download className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleSendEmail(invoice)}
-                                  disabled={sendingEmail === invoice.id}
-                                  className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                                  title="Send via Email"
-                                >
-                                  {sendingEmail === invoice.id ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
-                                  ) : (
-                                    <Mail className="h-4 w-4" />
-                                  )}
-                                </button>
-                              </div>
+                              <button
+                                onClick={() => handleDownloadPDF(invoice)}
+                                className="text-blue-600 hover:text-blue-900"
+                                title="Download PDF"
+                              >
+                                <Download className="h-4 w-4" />
+                              </button>
                             </td>
                           </tr>
                         ))}

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { createClient } from '@/utils/supabase/client'
 import { useGymBranding } from '@/hooks/useGymBranding'
-import { Plus, Edit, Trash2, Search, RefreshCw, X } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, RefreshCw, X, PlusCircle } from 'lucide-react'
 import { formatDate, formatCurrency, calculateEndDate } from '@/utils/date'
 import { Database } from '@/types/database.types'
 
@@ -30,8 +30,10 @@ export default function MembersPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'inactive'>('all')
   const [showModal, setShowModal] = useState(false)
   const [showRenewModal, setShowRenewModal] = useState(false)
+  const [showAddServiceModal, setShowAddServiceModal] = useState(false)
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [renewingMember, setRenewingMember] = useState<Member | null>(null)
+  const [addingServiceToMember, setAddingServiceToMember] = useState<Member | null>(null)
   const [ptService, setPtService] = useState({ enabled: false, startDate: '', endDate: '', amount: '' })
   const [otherServices, setOtherServices] = useState<Array<{ name: string; amount: string }>>([])
   const { gymId, primaryColor } = useGymBranding()
@@ -44,6 +46,12 @@ export default function MembersPage() {
     plan_type: 'Monthly' as 'Monthly' | 'Quarterly' | 'Yearly',
     start_date: new Date().toISOString().split('T')[0],
     amount: '',
+  })
+
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    phone: '',
+    dob: '',
   })
 
   const [renewData, setRenewData] = useState({
@@ -121,59 +129,33 @@ export default function MembersPage() {
     }
 
     try {
-      const endDate = calculateEndDate(formData.start_date, formData.plan_type)
-      const memberData = {
-        gym_id: gymId,
-        name: formData.name,
-        phone: formData.phone,
-        dob: formData.dob || null,
-        plan_type: formData.plan_type,
-        start_date: formData.start_date,
-        end_date: endDate.toISOString().split('T')[0],
-        amount: parseFloat(formData.amount),
-        is_active: true,
-      }
-
       if (editingMember) {
+        // Edit mode - only update basic member info
         const { error } = await supabase
           .from('members')
-          .update(memberData)
+          .update({
+            name: editFormData.name,
+            phone: editFormData.phone,
+            dob: editFormData.dob || null,
+          })
           .eq('id', editingMember.id)
 
         if (error) throw error
-
-        // Update member services - delete old ones and add new ones
-        await supabase.from('member_services').delete().eq('member_id', editingMember.id)
-
-        // Insert PT service if enabled
-        if (ptService.enabled && ptService.amount) {
-          await supabase.from('member_services').insert({
-            member_id: editingMember.id,
-            service_name: 'Personal Training',
-            service_type: 'pt',
-            start_date: ptService.startDate,
-            end_date: ptService.endDate,
-            amount: parseFloat(ptService.amount),
-            is_active: true,
-          })
-        }
-
-        // Insert other services
-        if (otherServices.length > 0) {
-          const otherServiceInserts = otherServices
-            .filter(s => s.name && s.amount)
-            .map(s => ({
-              member_id: editingMember.id,
-              service_name: s.name,
-              service_type: 'other' as const,
-              amount: parseFloat(s.amount),
-              is_active: true,
-            }))
-          if (otherServiceInserts.length > 0) {
-            await supabase.from('member_services').insert(otherServiceInserts)
-          }
-        }
+        alert('Member details updated successfully!')
       } else {
+        // Add new member mode
+        const endDate = calculateEndDate(formData.start_date, formData.plan_type)
+        const memberData = {
+          gym_id: gymId,
+          name: formData.name,
+          phone: formData.phone,
+          dob: formData.dob || null,
+          plan_type: formData.plan_type,
+          start_date: formData.start_date,
+          end_date: endDate.toISOString().split('T')[0],
+          amount: parseFloat(formData.amount),
+          is_active: true,
+        }
         const { data: newMember, error } = await supabase
           .from('members')
           .insert(memberData)
@@ -230,6 +212,7 @@ export default function MembersPage() {
           amount: totalAmount,
           date: formData.start_date,
           payment_status: 'Paid',
+          invoice_type: 'membership',
         })
 
         if (invoiceError) throw invoiceError
@@ -366,6 +349,7 @@ export default function MembersPage() {
         amount: totalAmount,
         date: newStartDate.toISOString().split('T')[0],
         payment_status: 'Paid',
+        invoice_type: 'renewal',
       })
 
       if (invoiceError) throw invoiceError
@@ -397,42 +381,93 @@ export default function MembersPage() {
     setShowModal(false)
   }
 
-  async function openEditModal(member: Member) {
-    setFormData({
+  function openEditModal(member: Member) {
+    setEditFormData({
       name: member.name,
       phone: member.phone,
       dob: member.dob || '',
-      plan_type: member.plan_type,
-      start_date: member.start_date,
-      amount: member.amount.toString(),
     })
-
-    // Load member's existing services
-    const { data: memberServices } = await supabase
-      .from('member_services')
-      .select('*')
-      .eq('member_id', member.id)
-      .eq('is_active', true)
-
-    // Load PT service
-    const ptSvc = memberServices?.find(ms => ms.service_type === 'pt')
-    if (ptSvc) {
-      setPtService({
-        enabled: true,
-        startDate: ptSvc.start_date || '',
-        endDate: ptSvc.end_date || '',
-        amount: ptSvc.amount.toString(),
-      })
-    } else {
-      setPtService({ enabled: false, startDate: '', endDate: '', amount: '' })
-    }
-
-    // Load other services
-    const otherSvcs = memberServices?.filter(ms => ms.service_type === 'other') || []
-    setOtherServices(otherSvcs.map(s => ({ name: s.service_name, amount: s.amount.toString() })))
 
     setEditingMember(member)
     setShowModal(true)
+  }
+
+  function openAddServiceModal(member: Member) {
+    setAddingServiceToMember(member)
+    setPtService({ enabled: false, startDate: '', endDate: '', amount: '' })
+    setOtherServices([])
+    setShowAddServiceModal(true)
+  }
+
+  async function handleAddService(e: React.FormEvent) {
+    e.preventDefault()
+    if (!gymId || !addingServiceToMember) return
+
+    try {
+      let totalAmount = 0
+
+      // Insert PT service if enabled
+      if (ptService.enabled && ptService.amount) {
+        await supabase.from('member_services').insert({
+          member_id: addingServiceToMember.id,
+          service_name: 'Personal Training',
+          service_type: 'pt',
+          start_date: ptService.startDate,
+          end_date: ptService.endDate,
+          amount: parseFloat(ptService.amount),
+          is_active: true,
+        })
+        totalAmount += parseFloat(ptService.amount)
+      }
+
+      // Insert other services
+      if (otherServices.length > 0) {
+        const otherServiceInserts = otherServices
+          .filter(s => s.name && s.amount)
+          .map(s => ({
+            member_id: addingServiceToMember.id,
+            service_name: s.name,
+            service_type: 'other' as const,
+            amount: parseFloat(s.amount),
+            is_active: true,
+          }))
+        if (otherServiceInserts.length > 0) {
+          await supabase.from('member_services').insert(otherServiceInserts)
+          totalAmount += otherServiceInserts.reduce((sum, s) => sum + s.amount, 0)
+        }
+      }
+
+      // Generate invoice for the new services
+      if (totalAmount > 0) {
+        const { data: invoiceNumberData, error: rpcError } = await supabase.rpc('generate_invoice_number')
+
+        if (rpcError) {
+          console.error('Error generating invoice number:', rpcError)
+        }
+
+        const { error: invoiceError } = await supabase.from('invoices').insert({
+          gym_id: gymId,
+          member_id: addingServiceToMember.id,
+          invoice_number: invoiceNumberData || `INV-${Date.now()}`,
+          amount: totalAmount,
+          date: new Date().toISOString().split('T')[0],
+          payment_status: 'Paid',
+          invoice_type: 'service',
+        })
+
+        if (invoiceError) throw invoiceError
+      }
+
+      setShowAddServiceModal(false)
+      setAddingServiceToMember(null)
+      setPtService({ enabled: false, startDate: '', endDate: '', amount: '' })
+      setOtherServices([])
+      loadMembers()
+      alert('Service(s) added successfully!')
+    } catch (error: any) {
+      console.error('Error adding service:', error)
+      alert(`Error adding service: ${error.message || 'Please try again.'}`)
+    }
   }
 
   function addOtherService() {
@@ -471,6 +506,17 @@ export default function MembersPage() {
     return total
   }
 
+  function calculateServiceTotalAmount() {
+    let total = 0
+    if (ptService.enabled && ptService.amount) {
+      total += parseFloat(ptService.amount)
+    }
+    otherServices.forEach(s => {
+      if (s.amount) total += parseFloat(s.amount)
+    })
+    return total
+  }
+
   return (
     <DashboardLayout>
       <div className="p-8">
@@ -499,7 +545,7 @@ export default function MembersPage() {
                   placeholder="Search members by name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 />
               </div>
               <div className="w-48">
@@ -661,6 +707,13 @@ export default function MembersPage() {
                               </button>
                             )}
                             <button
+                              onClick={() => openAddServiceModal(member)}
+                              className="text-purple-600 hover:text-purple-900"
+                              title="Add service"
+                            >
+                              <PlusCircle className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => openEditModal(member)}
                               className="text-blue-600 hover:text-blue-900"
                               title="Edit member"
@@ -694,82 +747,141 @@ export default function MembersPage() {
               {editingMember ? 'Edit Member' : 'Add New Member'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date of Birth (Optional)
-                </label>
-                <input
-                  type="date"
-                  value={formData.dob}
-                  onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Plan Type
-                </label>
-                <select
-                  value={formData.plan_type}
-                  onChange={(e) => setFormData({ ...formData, plan_type: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                >
-                  <option value="Monthly">Monthly</option>
-                  <option value="Quarterly">Quarterly (3 months)</option>
-                  <option value="Yearly">Yearly</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount (Membership Fee)
-                </label>
-                <input
-                  type="number"
-                  required
-                  step="0.01"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                />
-              </div>
+              {editingMember ? (
+                /* Edit Mode - Basic Info Only */
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.name}
+                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={editFormData.phone}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 10) {
+                          setEditFormData({ ...editFormData, phone: value });
+                        }
+                      }}
+                      maxLength={10}
+                      pattern="[0-9]{10}"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date of Birth (Optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={editFormData.dob}
+                      onChange={(e) => setEditFormData({ ...editFormData, dob: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                </>
+              ) : (
+                /* Add Mode - Full Form with Services */
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 10) {
+                          setFormData({ ...formData, phone: value });
+                        }
+                      }}
+                      maxLength={10}
+                      pattern="[0-9]{10}"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date of Birth (Optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dob}
+                      onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Plan Type
+                    </label>
+                    <select
+                      value={formData.plan_type}
+                      onChange={(e) => setFormData({ ...formData, plan_type: e.target.value as any })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    >
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly (3 months)</option>
+                      <option value="Yearly">Yearly</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount (Membership Fee)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                </>
+              )}
 
-              {/* PT Service Section */}
+              {/* PT Service Section - Only show in Add mode */}
+              {!editingMember && (
               <div className="border-t pt-4">
                 <label className="flex items-center gap-2 cursor-pointer mb-3">
                   <input
@@ -834,8 +946,10 @@ export default function MembersPage() {
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Other Services Section */}
+              {/* Other Services Section - Only show in Add mode */}
+              {!editingMember && (
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-3">
                   <label className="text-sm font-medium text-gray-700">
@@ -883,8 +997,10 @@ export default function MembersPage() {
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Total Amount Display */}
+              {/* Total Amount Display - Only show in Add mode */}
+              {!editingMember && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Total Amount:</span>
@@ -893,6 +1009,7 @@ export default function MembersPage() {
                   </span>
                 </div>
               </div>
+              )}
 
               <div className="flex gap-3 mt-6">
                 <button
@@ -1107,6 +1224,171 @@ export default function MembersPage() {
                   style={{ backgroundColor: primaryColor }}
                 >
                   Renew Membership
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Service Modal */}
+      {showAddServiceModal && addingServiceToMember && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Add Service - {addingServiceToMember.name}
+            </h2>
+            <form onSubmit={handleAddService} className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+                <p className="text-sm">
+                  Adding new service(s) will generate a new invoice for the member.
+                </p>
+              </div>
+
+              {/* PT Service Section */}
+              <div className="border-t pt-4">
+                <label className="flex items-center gap-2 cursor-pointer mb-3">
+                  <input
+                    type="checkbox"
+                    checked={ptService.enabled}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setPtService({
+                          enabled: true,
+                          startDate: new Date().toISOString().split('T')[0],
+                          endDate: calculateEndDate(new Date(), 'Monthly').toISOString().split('T')[0],
+                          amount: ''
+                        })
+                      } else {
+                        setPtService({ enabled: false, startDate: '', endDate: '', amount: '' })
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Add Personal Training (PT)</span>
+                </label>
+
+                {ptService.enabled && (
+                  <div className="space-y-3 ml-6 bg-gray-50 p-3 rounded-lg">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        PT Start Date
+                      </label>
+                      <input
+                        type="date"
+                        required={ptService.enabled}
+                        value={ptService.startDate}
+                        onChange={(e) => setPtService({ ...ptService, startDate: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        PT End Date
+                      </label>
+                      <input
+                        type="date"
+                        required={ptService.enabled}
+                        value={ptService.endDate}
+                        onChange={(e) => setPtService({ ...ptService, endDate: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        PT Amount
+                      </label>
+                      <input
+                        type="number"
+                        required={ptService.enabled}
+                        step="0.01"
+                        value={ptService.amount}
+                        onChange={(e) => setPtService({ ...ptService, amount: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Other Services Section */}
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-medium text-gray-700">
+                    Other Services
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addOtherService}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    + Add Service
+                  </button>
+                </div>
+
+                {otherServices.length > 0 && (
+                  <div className="space-y-3">
+                    {otherServices.map((service, idx) => (
+                      <div key={idx} className="flex gap-2 items-start bg-gray-50 p-3 rounded-lg">
+                        <div className="flex-1 space-y-2">
+                          <input
+                            type="text"
+                            placeholder="Service name"
+                            value={service.name}
+                            onChange={(e) => updateOtherService(idx, 'name', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          />
+                          <input
+                            type="number"
+                            placeholder="Amount"
+                            step="0.01"
+                            value={service.amount}
+                            onChange={(e) => updateOtherService(idx, 'amount', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeOtherService(idx)}
+                          className="text-red-600 hover:text-red-700 mt-2"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Total Amount Display */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Invoice Amount:</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {formatCurrency(calculateServiceTotalAmount())}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddServiceModal(false)
+                    setAddingServiceToMember(null)
+                    setPtService({ enabled: false, startDate: '', endDate: '', amount: '' })
+                    setOtherServices([])
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Add Service(s)
                 </button>
               </div>
             </form>

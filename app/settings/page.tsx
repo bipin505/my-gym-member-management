@@ -15,6 +15,8 @@ export default function SettingsPage() {
 
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
+    address: '',
     gstNumber: '',
     primaryColor: '#3B82F6',
     secondaryColor: '#1E40AF',
@@ -26,13 +28,15 @@ export default function SettingsPage() {
 
       const { data: gym } = await supabase
         .from('gyms')
-        .select('name, gst_number, primary_color, secondary_color')
+        .select('name, phone, address, gst_number, primary_color, secondary_color')
         .eq('id', gymId)
         .single()
 
       if (gym) {
         setFormData({
           name: gym.name || '',
+          phone: gym.phone || '',
+          address: gym.address || '',
           gstNumber: gym.gst_number || '',
           primaryColor: gym.primary_color || '#3B82F6',
           secondaryColor: gym.secondary_color || '#1E40AF',
@@ -97,6 +101,8 @@ export default function SettingsPage() {
         .from('gyms')
         .update({
           name: formData.name,
+          phone: formData.phone || null,
+          address: formData.address || null,
           gst_number: formData.gstNumber || null,
           primary_color: formData.primaryColor,
           secondary_color: formData.secondaryColor,
@@ -184,8 +190,47 @@ export default function SettingsPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '') // Remove non-digits
+                    if (value.length <= 10) {
+                      setFormData({ ...formData, phone: value })
+                    }
+                  }}
+                  placeholder="e.g., 9876543210"
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  10-digit contact number (shown on invoices)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address
+                </label>
+                <textarea
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="e.g., 123 Main Street, City, State - 123456"
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Address will be shown on all invoices
+                </p>
               </div>
 
               <div>
@@ -197,7 +242,7 @@ export default function SettingsPage() {
                   value={formData.gstNumber}
                   onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
                   placeholder="e.g., 27XXXXX1234X1Z5"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   GST number will be shown on all invoices
@@ -219,7 +264,7 @@ export default function SettingsPage() {
                     type="text"
                     value={formData.primaryColor}
                     onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                     placeholder="#3B82F6"
                   />
                 </div>
@@ -243,7 +288,7 @@ export default function SettingsPage() {
                     type="text"
                     value={formData.secondaryColor}
                     onChange={(e) => setFormData({ ...formData, secondaryColor: e.target.value })}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                     placeholder="#1E40AF"
                   />
                 </div>

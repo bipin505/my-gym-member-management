@@ -18,6 +18,8 @@ interface InvoiceData {
   services?: ServiceItem[]
   gymName: string
   gymEmail: string
+  gymPhone?: string | null
+  gymAddress?: string | null
   gymGstNumber?: string | null
   gymLogo?: string | null
   primaryColor: string
@@ -49,11 +51,30 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Blob> {
 
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  doc.text(data.gymEmail, data.gymLogo ? 50 : 15, 30)
+  let yPos = 30
 
-  // Add GST number if available
+  // Email
+  doc.text(data.gymEmail, data.gymLogo ? 50 : 15, yPos)
+  yPos += 6
+
+  // Phone if available
+  if (data.gymPhone) {
+    doc.text(`Phone: ${data.gymPhone}`, data.gymLogo ? 50 : 15, yPos)
+    yPos += 6
+  }
+
+  // Address if available
+  if (data.gymAddress) {
+    // Split address if too long
+    const maxWidth = 80
+    const addressLines = doc.splitTextToSize(data.gymAddress, maxWidth)
+    doc.text(addressLines, data.gymLogo ? 50 : 15, yPos)
+    yPos += addressLines.length * 5
+  }
+
+  // GST number if available
   if (data.gymGstNumber) {
-    doc.text(`GST: ${data.gymGstNumber}`, data.gymLogo ? 50 : 15, 37)
+    doc.text(`GST: ${data.gymGstNumber}`, data.gymLogo ? 50 : 15, yPos)
   }
 
   // Invoice title (white text)
