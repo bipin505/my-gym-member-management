@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { createClient } from '@/utils/supabase/client'
 import { useGymBranding } from '@/hooks/useGymBranding'
-import { Plus, Edit, Trash2, Search, RefreshCw, X, PlusCircle } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, RefreshCw, X, PlusCircle, Download } from 'lucide-react'
 import { formatDate, formatCurrency, calculateEndDate } from '@/utils/date'
+import { exportToCSV } from '@/utils/export'
 import { Database } from '@/types/database.types'
 
 type Member = Database['public']['Tables']['members']['Row']
@@ -541,6 +542,42 @@ export default function MembersPage() {
     return total
   }
 
+  function handleExportCSV() {
+    const exportData = filteredMembers.map(member => {
+      const daysUntilExpiry = Math.ceil(
+        (new Date(member.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      )
+      const isExpired = daysUntilExpiry < 0
+      const isExpiring = daysUntilExpiry <= 7 && daysUntilExpiry >= 0
+
+      let status = 'Inactive'
+      if (isExpired) status = 'Expired'
+      else if (member.is_active && isExpiring) status = 'Expiring Soon'
+      else if (member.is_active) status = 'Active'
+
+      const services = member.member_services?.map(ms => ms.service_name).join('; ') || 'None'
+      const totalAmount = member.amount + (member.member_services?.reduce((sum, ms) => sum + ms.amount, 0) || 0)
+
+      return {
+        Name: member.name,
+        Phone: member.phone,
+        'Date of Birth': member.dob || '',
+        'Plan Type': member.plan_type,
+        'Start Date': formatDate(member.start_date),
+        'End Date': formatDate(member.end_date),
+        'Membership Amount': member.amount,
+        'Services': services,
+        'Total Amount': totalAmount,
+        'Status': status
+      }
+    })
+
+    const headers = ['Name', 'Phone', 'Date of Birth', 'Plan Type', 'Start Date', 'End Date', 'Membership Amount', 'Services', 'Total Amount', 'Status']
+    const filename = `members-${new Date().toISOString().split('T')[0]}.csv`
+
+    exportToCSV(exportData, headers, filename)
+  }
+
   return (
     <DashboardLayout>
       <div className="p-8">
@@ -549,14 +586,24 @@ export default function MembersPage() {
             <h1 className="text-3xl font-bold text-gray-900">Members</h1>
             <p className="text-gray-600 mt-1">Manage your gym members</p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-colors"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <Plus className="h-5 w-5" />
-            Add Member
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              title="Export to CSV"
+            >
+              <Download className="h-5 w-5" />
+              Export CSV
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <Plus className="h-5 w-5" />
+              Add Member
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow">
