@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { createClient } from '@/utils/supabase/client'
 import { useGymBranding } from '@/hooks/useGymBranding'
-import { Dumbbell, Search, AlertTriangle, CheckCircle, XCircle, Calendar, Phone, User } from 'lucide-react'
+import { Dumbbell, Search, AlertTriangle, CheckCircle, XCircle, Calendar, Phone, User, RefreshCw } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/utils/date'
 import Link from 'next/link'
 
@@ -28,6 +28,9 @@ export default function PTMembersPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring-soon' | 'expired'>('all')
+  const [showRenewModal, setShowRenewModal] = useState(false)
+  const [renewingPT, setRenewingPT] = useState<PTMember | null>(null)
+  const [renewData, setRenewData] = useState({ startDate: '', endDate: '', amount: '' })
   const { gymId, primaryColor } = useGymBranding()
   const supabase = createClient()
 
@@ -134,6 +137,68 @@ export default function PTMembersPage() {
     active: ptMembers.filter(m => m.status === 'active').length,
     expiringSoon: ptMembers.filter(m => m.status === 'expiring-soon').length,
     expired: ptMembers.filter(m => m.status === 'expired').length,
+  }
+
+  function openRenewModal(ptMember: PTMember) {
+    const defaultStartDate = ptMember.end_date
+      ? new Date(new Date(ptMember.end_date).getTime() + 86400000).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0]
+
+    setRenewingPT(ptMember)
+    setRenewData({
+      startDate: defaultStartDate,
+      endDate: '',
+      amount: ptMember.amount.toString(),
+    })
+    setShowRenewModal(true)
+  }
+
+  async function handleRenewPT(e: React.FormEvent) {
+    e.preventDefault()
+    if (!gymId || !renewingPT) return
+
+    try {
+      // Update the PT service with new dates and amount
+      const { error: updateError } = await supabase
+        .from('member_services')
+        .update({
+          start_date: renewData.startDate,
+          end_date: renewData.endDate,
+          amount: parseFloat(renewData.amount),
+          is_active: true,
+        })
+        .eq('id', renewingPT.id)
+
+      if (updateError) throw updateError
+
+      // Generate invoice for renewal
+      const { data: invoiceNumberData, error: rpcError } = await supabase.rpc('generate_invoice_number')
+
+      if (rpcError) {
+        console.error('Error generating invoice number:', rpcError)
+      }
+
+      const { error: invoiceError } = await supabase.from('invoices').insert({
+        gym_id: gymId,
+        member_id: renewingPT.member_id,
+        invoice_number: invoiceNumberData || `INV-${Date.now()}`,
+        amount: parseFloat(renewData.amount),
+        date: renewData.startDate,
+        payment_status: 'Paid',
+        invoice_type: 'service',
+      })
+
+      if (invoiceError) throw invoiceError
+
+      setShowRenewModal(false)
+      setRenewingPT(null)
+      setRenewData({ startDate: '', endDate: '', amount: '' })
+      loadPTMembers()
+      alert('PT service renewed successfully!')
+    } catch (error: any) {
+      console.error('Error renewing PT service:', error)
+      alert(`Error renewing PT service: ${error.message || 'Please try again.'}`)
+    }
   }
 
   function getStatusBadge(member: PTMember) {
@@ -297,6 +362,9 @@ export default function PTMembersPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -349,6 +417,18 @@ export default function PTMembersPage() {
                       <td className="px-6 py-4">
                         {getStatusBadge(member)}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {(member.status === 'expiring-soon' || member.status === 'expired') && (
+                          <button
+                            onClick={() => openRenewModal(member)}
+                            className="inline-flex items-center gap-1 text-green-600 hover:text-green-900"
+                            title="Renew PT service"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            <span>Renew</span>
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -374,6 +454,94 @@ export default function PTMembersPage() {
           </div>
         )}
       </div>
+
+      {/* Renew PT Modal */}
+      {showRenewModal && renewingPT && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Renew PT Service - {renewingPT.member_name}
+            </h2>
+            <form onSubmit={handleRenewPT} className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+                <p className="text-sm">
+                  Current service expires on: <strong>{formatDate(renewingPT.end_date || '')}</strong>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Start Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={renewData.startDate}
+                  onChange={(e) => setRenewData({ ...renewData, startDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New End Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={renewData.endDate}
+                  onChange={(e) => setRenewData({ ...renewData, endDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  required
+                  step="0.01"
+                  value={renewData.amount}
+                  onChange={(e) => setRenewData({ ...renewData, amount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Invoice Amount:</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {formatCurrency(parseFloat(renewData.amount || '0'))}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRenewModal(false)
+                    setRenewingPT(null)
+                    setRenewData({ startDate: '', endDate: '', amount: '' })
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Renew PT Service
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }

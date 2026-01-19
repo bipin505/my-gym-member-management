@@ -14,6 +14,8 @@ type Invoice = Database['public']['Tables']['invoices']['Row'] & {
     name: string
     phone: string
     plan_type: string
+    start_date: string
+    end_date: string
   }
 }
 
@@ -60,7 +62,9 @@ export default function InvoicesPage() {
           members (
             name,
             phone,
-            plan_type
+            plan_type,
+            start_date,
+            end_date
           )
         `)
         .eq('gym_id', gymId)
@@ -129,12 +133,14 @@ export default function InvoicesPage() {
         .eq('id', invoice.member_id)
         .single()
 
-      // Build services array
+      // Build services array with dates
       const services = member?.member_services
         ?.filter((ms: any) => ms.is_active)
         .map((ms: any) => ({
           name: ms.service_name,
-          amount: ms.amount
+          amount: ms.amount,
+          startDate: ms.start_date,
+          endDate: ms.end_date
         })) || []
 
       // Determine what to show based on invoice type
@@ -156,6 +162,8 @@ export default function InvoicesPage() {
         planType: showPlan ? invoice.members.plan_type : undefined,
         planAmount: showPlan ? member?.amount || 0 : undefined,
         services: showServices ? services : [],
+        startDate: invoice.members.start_date,
+        endDate: invoice.members.end_date,
         gymName: name,
         gymEmail: gym?.email || '',
         gymPhone: gym?.phone || null,
@@ -232,6 +240,9 @@ export default function InvoicesPage() {
                             Date
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Service Period
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Amount
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -250,6 +261,13 @@ export default function InvoicesPage() {
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                               {formatDate(invoice.date)}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                              <div className="flex flex-col">
+                                <span>{formatDate(invoice.members.start_date)}</span>
+                                <span className="text-xs text-gray-400">to</span>
+                                <span>{formatDate(invoice.members.end_date)}</span>
+                              </div>
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
                               {formatCurrency(invoice.amount)}

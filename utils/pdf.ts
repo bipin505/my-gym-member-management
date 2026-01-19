@@ -5,6 +5,8 @@ import { formatDate, formatCurrency } from './date'
 interface ServiceItem {
   name: string
   amount: number
+  startDate?: string
+  endDate?: string
 }
 
 interface InvoiceData {
@@ -16,6 +18,8 @@ interface InvoiceData {
   planType?: string
   planAmount?: number
   services?: ServiceItem[]
+  startDate?: string
+  endDate?: string
   gymName: string
   gymEmail: string
   gymPhone?: string | null
@@ -122,15 +126,23 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Blob> {
   // Invoice items table with better spacing
   const tableData = []
 
-  // Add membership plan
+  // Add membership plan with dates
   if (data.planType && data.planAmount) {
-    tableData.push(['Membership Plan', data.planType, formatCurrency(data.planAmount)])
+    let planDetails = data.planType
+    if (data.startDate && data.endDate) {
+      planDetails += `\n${formatDate(data.startDate)} - ${formatDate(data.endDate)}`
+    }
+    tableData.push(['Membership Plan', planDetails, formatCurrency(data.planAmount)])
   }
 
-  // Add services
+  // Add services with dates
   if (data.services && data.services.length > 0) {
     data.services.forEach(service => {
-      tableData.push(['Service', service.name, formatCurrency(service.amount)])
+      let serviceDetails = service.name
+      if (service.startDate && service.endDate) {
+        serviceDetails += `\n${formatDate(service.startDate)} - ${formatDate(service.endDate)}`
+      }
+      tableData.push(['Service', serviceDetails, formatCurrency(service.amount)])
     })
   }
 

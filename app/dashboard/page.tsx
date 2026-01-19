@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { createClient } from '@/utils/supabase/client'
 import { useGymBranding } from '@/hooks/useGymBranding'
-import { Users, AlertCircle, UserPlus, Dumbbell, Cake } from 'lucide-react'
+import { Users, AlertCircle, UserX, Dumbbell, Cake } from 'lucide-react'
 import Link from 'next/link'
 import { addDays, startOfMonth } from 'date-fns'
 
@@ -12,7 +12,7 @@ interface Stats {
   activeMembers: number
   renewalsDue: number
   membersWithPT: number
-  newMembers: number
+  expiredMembers: number
 }
 
 interface BirthdayMember {
@@ -35,7 +35,7 @@ export default function DashboardPage() {
     activeMembers: 0,
     renewalsDue: 0,
     membersWithPT: 0,
-    newMembers: 0,
+    expiredMembers: 0,
   })
   const [birthdayMembers, setBirthdayMembers] = useState<BirthdayMember[]>([])
   const [ptMembers, setPtMembers] = useState<PTMember[]>([])
@@ -94,13 +94,12 @@ export default function DashboardPage() {
 
         setPtMembers(ptMembersList)
 
-        // New members this month
-        const monthStart = startOfMonth(new Date()).toISOString().split('T')[0]
-        const { count: newCount } = await supabase
+        // Expired members (end_date < today)
+        const { count: expiredCount } = await supabase
           .from('members')
           .select('*', { count: 'exact', head: true })
           .eq('gym_id', gymId)
-          .gte('created_at', monthStart)
+          .lt('end_date', todayStr)
 
         // Today's birthdays
         const todayMonthDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -125,7 +124,7 @@ export default function DashboardPage() {
           activeMembers: activeCount || 0,
           renewalsDue: renewalsCount || 0,
           membersWithPT: ptCount,
-          newMembers: newCount || 0,
+          expiredMembers: expiredCount || 0,
         })
       } catch (error) {
         console.error('Error loading stats:', error)
@@ -157,10 +156,10 @@ export default function DashboardPage() {
       color: 'bg-green-500',
     },
     {
-      title: 'New Members',
-      value: stats.newMembers,
-      icon: UserPlus,
-      color: 'bg-purple-500',
+      title: 'Expired Memberships',
+      value: stats.expiredMembers,
+      icon: UserX,
+      color: 'bg-red-500',
     },
   ]
 

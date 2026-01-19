@@ -74,14 +74,15 @@ export default function MembersPage() {
         const daysUntilExpiry = Math.ceil(
           (new Date(member.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
         )
+        const isExpired = daysUntilExpiry < 0
         const isExpiring = daysUntilExpiry <= 7 && daysUntilExpiry >= 0
 
         if (statusFilter === 'active') {
-          return member.is_active && !isExpiring
+          return member.is_active && !isExpiring && !isExpired
         } else if (statusFilter === 'expiring') {
           return member.is_active && isExpiring
         } else if (statusFilter === 'inactive') {
-          return !member.is_active
+          return !member.is_active || isExpired
         }
         return true
       })
@@ -392,7 +393,7 @@ export default function MembersPage() {
     setShowModal(true)
   }
 
-  function openAddServiceModal(member: Member) {
+  async function openAddServiceModal(member: Member) {
     setAddingServiceToMember(member)
     setPtService({ enabled: false, startDate: '', endDate: '', amount: '' })
     setOtherServices([])
@@ -404,6 +405,29 @@ export default function MembersPage() {
     if (!gymId || !addingServiceToMember) return
 
     try {
+      // Check for existing active services
+      const { data: existingServices } = await supabase
+        .from('member_services')
+        .select('service_name, service_type')
+        .eq('member_id', addingServiceToMember.id)
+        .eq('is_active', true)
+
+      const existingServiceNames = new Set(existingServices?.map(s => s.service_name.toLowerCase()) || [])
+      const hasPT = existingServices?.some(s => s.service_type === 'pt') || false
+
+      // Check for PT duplicate
+      if (ptService.enabled && hasPT) {
+        alert('This member already has an active Personal Training service. Please renew the existing PT service instead.')
+        return
+      }
+
+      // Check for other service duplicates
+      const duplicates = otherServices.filter(s => s.name && existingServiceNames.has(s.name.toLowerCase()))
+      if (duplicates.length > 0) {
+        alert(`The following service(s) already exist for this member: ${duplicates.map(s => s.name).join(', ')}`)
+        return
+      }
+
       let totalAmount = 0
 
       // Insert PT service if enabled
@@ -610,6 +634,7 @@ export default function MembersPage() {
                     const daysUntilExpiry = Math.ceil(
                       (new Date(member.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                     )
+                    const isExpired = daysUntilExpiry < 0
                     const isExpiring = daysUntilExpiry <= 7 && daysUntilExpiry >= 0
 
                     return (
@@ -681,7 +706,11 @@ export default function MembersPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {member.is_active ? (
+                          {isExpired ? (
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                              Expired
+                            </span>
+                          ) : member.is_active ? (
                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                               isExpiring
                                 ? 'bg-orange-100 text-orange-800'
@@ -697,7 +726,7 @@ export default function MembersPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-2">
-                            {member.is_active && isExpiring && (
+                            {(isExpired || (member.is_active && isExpiring)) && (
                               <button
                                 onClick={() => openRenewModal(member)}
                                 className="text-green-600 hover:text-green-900"
