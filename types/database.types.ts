@@ -62,6 +62,7 @@ export interface Database {
           end_date: string
           amount: number
           is_active: boolean
+          description: string | null
           created_at: string
         }
         Insert: {
@@ -75,6 +76,7 @@ export interface Database {
           end_date: string
           amount: number
           is_active?: boolean
+          description?: string | null
           created_at?: string
         }
         Update: {
@@ -88,6 +90,7 @@ export interface Database {
           end_date?: string
           amount?: number
           is_active?: boolean
+          description?: string | null
           created_at?: string
         }
       }

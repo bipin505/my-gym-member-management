@@ -17,6 +17,8 @@ type Invoice = Database['public']['Tables']['invoices']['Row'] & {
     start_date: string
     end_date: string
   }
+  servicePeriodStart?: string | null
+  servicePeriodEnd?: string | null
 }
 
 type GroupedInvoices = {
@@ -72,8 +74,36 @@ export default function InvoicesPage() {
 
       if (error) throw error
 
+      // Fetch service periods for each invoice
+      const invoicesWithServicePeriods = await Promise.all(
+        (data || []).map(async (invoice) => {
+          // For service-type invoices, get the service date range
+          if (invoice.invoice_type === 'service') {
+            const { data: services } = await supabase
+              .from('member_services')
+              .select('start_date, end_date')
+              .eq('member_id', invoice.member_id)
+              .lte('created_at', invoice.created_at)
+              .order('created_at', { ascending: false })
+
+            if (services && services.length > 0) {
+              // Find the earliest start date and latest end date
+              const startDates = services.map(s => s.start_date).filter(Boolean)
+              const endDates = services.map(s => s.end_date).filter(Boolean)
+
+              return {
+                ...invoice,
+                servicePeriodStart: startDates.length > 0 ? startDates.sort()[0] : null,
+                servicePeriodEnd: endDates.length > 0 ? endDates.sort().reverse()[0] : null
+              }
+            }
+          }
+          return invoice
+        })
+      )
+
       // Group invoices by member
-      const grouped = groupInvoicesByMember(data as Invoice[] || [])
+      const grouped = groupInvoicesByMember(invoicesWithServicePeriods as any[] || [])
       setGroupedInvoices(grouped)
       setFilteredGroupedInvoices(grouped)
     } catch (error) {
@@ -126,32 +156,39 @@ export default function InvoicesPage() {
         .eq('id', gymId!)
         .single()
 
-      // Fetch member data with services
+      // Fetch member data with description
       const { data: member } = await supabase
         .from('members')
-        .select('amount, member_services(*)')
+        .select('amount, description')
         .eq('id', invoice.member_id)
         .single()
 
+      // Determine what to show based on invoice type
+      const invoiceType = invoice.invoice_type || 'membership'
+
+      // Fetch services that were created BEFORE or AT the time of this invoice
+      // This ensures we only show services that existed when the invoice was generated
+      const { data: memberServices } = await supabase
+        .from('member_services')
+        .select('*')
+        .eq('member_id', invoice.member_id)
+        .lte('created_at', invoice.created_at)
+
       // Build services array with dates
-      const services = member?.member_services
-        ?.filter((ms: any) => ms.is_active)
-        .map((ms: any) => ({
+      const services = memberServices
+        ?.map((ms: any) => ({
           name: ms.service_name,
           amount: ms.amount,
           startDate: ms.start_date,
           endDate: ms.end_date
         })) || []
 
-      // Determine what to show based on invoice type
-      const invoiceType = invoice.invoice_type || 'membership'
-
       // Logic:
-      // - 'membership': show plan + services (initial signup)
-      // - 'renewal': show plan + services (renewal)
+      // - 'membership': show plan + services that existed at signup time
+      // - 'renewal': show plan + services that existed at renewal time
       // - 'service': show ONLY services, NO plan (service addition)
       const showPlan = invoiceType === 'membership' || invoiceType === 'renewal'
-      const showServices = true // Always show services if they exist
+      const showServices = invoiceType === 'service' || services.length > 0
 
       const pdfBlob = await generateInvoicePDF({
         invoiceNumber: invoice.invoice_number,
@@ -161,6 +198,7 @@ export default function InvoicesPage() {
         amount: invoice.amount,
         planType: showPlan ? invoice.members.plan_type : undefined,
         planAmount: showPlan ? member?.amount || 0 : undefined,
+        planDescription: showPlan ? member?.description : undefined,
         services: showServices ? services : [],
         startDate: invoice.members.start_date,
         endDate: invoice.members.end_date,
@@ -263,11 +301,19 @@ export default function InvoicesPage() {
                               {formatDate(invoice.date)}
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
-                              <div className="flex flex-col">
-                                <span>{formatDate(invoice.members.start_date)}</span>
-                                <span className="text-xs text-gray-400">to</span>
-                                <span>{formatDate(invoice.members.end_date)}</span>
-                              </div>
+                              {invoice.invoice_type === 'service' && invoice.servicePeriodStart && invoice.servicePeriodEnd ? (
+                                <div className="flex flex-col">
+                                  <span>{formatDate(invoice.servicePeriodStart)}</span>
+                                  <span className="text-xs text-gray-400">to</span>
+                                  <span>{formatDate(invoice.servicePeriodEnd)}</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col">
+                                  <span>{formatDate(invoice.members.start_date)}</span>
+                                  <span className="text-xs text-gray-400">to</span>
+                                  <span>{formatDate(invoice.members.end_date)}</span>
+                                </div>
+                              )}
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
                               {formatCurrency(invoice.amount)}

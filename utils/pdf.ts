@@ -17,6 +17,7 @@ interface InvoiceData {
   amount: number
   planType?: string
   planAmount?: number
+  planDescription?: string | null
   services?: ServiceItem[]
   startDate?: string
   endDate?: string
@@ -126,9 +127,12 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Blob> {
   // Invoice items table with better spacing
   const tableData = []
 
-  // Add membership plan with dates
+  // Add membership plan with dates and description
   if (data.planType && data.planAmount) {
     let planDetails = data.planType
+    if (data.planDescription) {
+      planDetails += `\n${data.planDescription}`
+    }
     if (data.startDate && data.endDate) {
       planDetails += `\n${formatDate(data.startDate)} - ${formatDate(data.endDate)}`
     }

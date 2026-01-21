@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { createClient } from '@/utils/supabase/client'
 import { useGymBranding } from '@/hooks/useGymBranding'
-import { Plus, Edit, Trash2, Search, RefreshCw, X, PlusCircle, Download } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, RefreshCw, X, PlusCircle, Download, Eye } from 'lucide-react'
 import { formatDate, formatCurrency, calculateEndDate } from '@/utils/date'
 import { exportToCSV } from '@/utils/export'
 import { Database } from '@/types/database.types'
+import { useRouter } from 'next/navigation'
 
 type Member = Database['public']['Tables']['members']['Row']
 type MemberService = {
@@ -24,11 +25,12 @@ type MemberWithServices = Member & {
 }
 
 export default function MembersPage() {
+  const router = useRouter()
   const [members, setMembers] = useState<MemberWithServices[]>([])
   const [filteredMembers, setFilteredMembers] = useState<MemberWithServices[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'inactive'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all')
   const [showModal, setShowModal] = useState(false)
   const [showRenewModal, setShowRenewModal] = useState(false)
   const [showAddServiceModal, setShowAddServiceModal] = useState(false)
@@ -47,6 +49,7 @@ export default function MembersPage() {
     plan_type: 'Monthly' as 'Monthly' | 'Quarterly' | 'Yearly',
     start_date: new Date().toISOString().split('T')[0],
     amount: '',
+    description: '',
   })
 
   const [editFormData, setEditFormData] = useState({
@@ -82,7 +85,7 @@ export default function MembersPage() {
           return member.is_active && !isExpiring && !isExpired
         } else if (statusFilter === 'expiring') {
           return member.is_active && isExpiring
-        } else if (statusFilter === 'inactive') {
+        } else if (statusFilter === 'expired') {
           return !member.is_active || isExpired
         }
         return true
@@ -156,6 +159,7 @@ export default function MembersPage() {
           start_date: formData.start_date,
           end_date: endDate.toISOString().split('T')[0],
           amount: parseFloat(formData.amount),
+          description: formData.description || null,
           is_active: true,
         }
         const { data: newMember, error } = await supabase
@@ -212,7 +216,7 @@ export default function MembersPage() {
           member_id: newMember.id,
           invoice_number: invoiceNumberData || `INV-${Date.now()}`,
           amount: totalAmount,
-          date: formData.start_date,
+          date: new Date().toISOString().split('T')[0],
           payment_status: 'Paid',
           invoice_type: 'membership',
         })
@@ -349,7 +353,7 @@ export default function MembersPage() {
         member_id: renewingMember.id,
         invoice_number: invoiceNumberData || `INV-${Date.now()}`,
         amount: totalAmount,
-        date: newStartDate.toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0],
         payment_status: 'Paid',
         invoice_type: 'renewal',
       })
@@ -376,6 +380,7 @@ export default function MembersPage() {
       plan_type: 'Monthly',
       start_date: new Date().toISOString().split('T')[0],
       amount: '',
+      description: '',
     })
     setPtService({ enabled: false, startDate: '', endDate: '', amount: '' })
     setOtherServices([])
@@ -555,24 +560,20 @@ export default function MembersPage() {
       else if (member.is_active && isExpiring) status = 'Expiring Soon'
       else if (member.is_active) status = 'Active'
 
-      const services = member.member_services?.map(ms => ms.service_name).join('; ') || 'None'
-      const totalAmount = member.amount + (member.member_services?.reduce((sum, ms) => sum + ms.amount, 0) || 0)
-
       return {
         Name: member.name,
         Phone: member.phone,
         'Date of Birth': member.dob || '',
         'Plan Type': member.plan_type,
+        'Description': member.description || '',
         'Start Date': formatDate(member.start_date),
         'End Date': formatDate(member.end_date),
-        'Membership Amount': member.amount,
-        'Services': services,
-        'Total Amount': totalAmount,
+        'Amount': member.amount,
         'Status': status
       }
     })
 
-    const headers = ['Name', 'Phone', 'Date of Birth', 'Plan Type', 'Start Date', 'End Date', 'Membership Amount', 'Services', 'Total Amount', 'Status']
+    const headers = ['Name', 'Phone', 'Date of Birth', 'Plan Type', 'Description', 'Start Date', 'End Date', 'Amount', 'Status']
     const filename = `members-${new Date().toISOString().split('T')[0]}.csv`
 
     exportToCSV(exportData, headers, filename)
@@ -628,7 +629,7 @@ export default function MembersPage() {
                   <option value="all">All Members</option>
                   <option value="active">Active</option>
                   <option value="expiring">Expiring Soon</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="expired">Expired</option>
                 </select>
               </div>
             </div>
@@ -657,6 +658,9 @@ export default function MembersPage() {
                       Plan
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Start Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -664,9 +668,6 @@ export default function MembersPage() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Services
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -695,6 +696,9 @@ export default function MembersPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {member.plan_type}
                         </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                          {member.description || '-'}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(member.start_date)}
                         </td>
@@ -702,55 +706,7 @@ export default function MembersPage() {
                           {formatDate(member.end_date)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                          {formatCurrency(
-                            member.amount +
-                            (member.member_services?.reduce((sum, ms) => sum + ms.amount, 0) || 0)
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          {member.member_services && member.member_services.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {member.member_services.map((ms, idx) => {
-                                // For PT services, check expiry
-                                if (ms.service_type === 'pt' && ms.end_date) {
-                                  const ptDaysUntilExpiry = Math.ceil(
-                                    (new Date(ms.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                                  )
-                                  const isPtExpiring = ptDaysUntilExpiry <= 7 && ptDaysUntilExpiry >= 0
-                                  const isPtExpired = ptDaysUntilExpiry < 0
-
-                                  return (
-                                    <span
-                                      key={idx}
-                                      className={`px-2 py-1 text-xs rounded-full ${
-                                        isPtExpired
-                                          ? 'bg-red-100 text-red-800'
-                                          : isPtExpiring
-                                          ? 'bg-orange-100 text-orange-800'
-                                          : 'bg-green-100 text-green-800'
-                                      }`}
-                                      title={`${ms.service_name} - ${formatCurrency(ms.amount)} (Expires: ${formatDate(ms.end_date)})`}
-                                    >
-                                      {ms.service_name}
-                                    </span>
-                                  )
-                                }
-
-                                // Other services - always blue
-                                return (
-                                  <span
-                                    key={idx}
-                                    className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
-                                    title={`${ms.service_name} - ${formatCurrency(ms.amount)}`}
-                                  >
-                                    {ms.service_name}
-                                  </span>
-                                )
-                              })}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-400">None</span>
-                          )}
+                          {formatCurrency(member.amount)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {isExpired ? (
@@ -773,6 +729,13 @@ export default function MembersPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => router.push(`/members/${member.id}`)}
+                              className="text-indigo-600 hover:text-indigo-900"
+                              title="View details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
                             {(isExpired || (member.is_active && isExpiring)) && (
                               <button
                                 onClick={() => openRenewModal(member)}
@@ -950,6 +913,18 @@ export default function MembersPage() {
                       step="0.01"
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Cardio + Weight Training"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                     />
                   </div>
