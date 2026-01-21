@@ -9,7 +9,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Dumbbell
+  Dumbbell,
+  X
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useGymBranding } from '@/hooks/useGymBranding'
@@ -23,7 +24,7 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -38,17 +39,27 @@ export default function Sidebar() {
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div
-            className="p-2 rounded-lg"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <Dumbbell className="h-6 w-6 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <Dumbbell className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-lg text-gray-900">{name || 'Gym'}</h1>
+              <p className="text-xs text-gray-500">Management System</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-lg text-gray-900">{name || 'Gym'}</h1>
-            <p className="text-xs text-gray-500">Management System</p>
-          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+            >
+              <X className="h-5 w-5 text-gray-700" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -59,6 +70,7 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onClose}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
                   ? 'bg-blue-50 text-blue-700 font-medium'

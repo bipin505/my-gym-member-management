@@ -101,7 +101,7 @@ export default function MemberDetailPage() {
   if (!member) {
     return (
       <DashboardLayout>
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           <p className="text-red-600">Member not found</p>
         </div>
       </DashboardLayout>
@@ -119,39 +119,39 @@ export default function MemberDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         {/* Header */}
         <div className="mb-6">
           <button
             onClick={() => router.push('/members')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center gap-2 text-sm md:text-base text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Members
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">{member.name}</h1>
-          <p className="text-gray-600 mt-1">Member Details</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{member.name}</h1>
+          <p className="text-sm md:text-base text-gray-600 mt-1">Member Details</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Member Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
+              <div className="grid grid-cols-1 gap-4">
                 <div className="flex items-start gap-3">
                   <User className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-500">Name</p>
-                    <p className="text-base font-medium text-gray-900">{member.name}</p>
+                    <p className="text-sm md:text-base font-medium text-gray-900">{member.name}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-500">Phone</p>
-                    <p className="text-base font-medium text-gray-900">{member.phone}</p>
+                    <p className="text-sm md:text-base font-medium text-gray-900">{member.phone}</p>
                   </div>
                 </div>
                 {member.dob && (
@@ -159,7 +159,7 @@ export default function MemberDetailPage() {
                     <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-sm text-gray-500">Date of Birth</p>
-                      <p className="text-base font-medium text-gray-900">{formatDate(member.dob)}</p>
+                      <p className="text-sm md:text-base font-medium text-gray-900">{formatDate(member.dob)}</p>
                     </div>
                   </div>
                 )}
@@ -167,30 +167,30 @@ export default function MemberDetailPage() {
             </div>
 
             {/* Membership Details Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Membership Details</h2>
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Membership Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Plan Type</p>
-                  <p className="text-base font-medium text-gray-900">{member.plan_type}</p>
+                  <p className="text-sm md:text-base font-medium text-gray-900">{member.plan_type}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Amount</p>
-                  <p className="text-base font-medium text-gray-900">{formatCurrency(member.amount)}</p>
+                  <p className="text-sm md:text-base font-medium text-gray-900">{formatCurrency(member.amount)}</p>
                 </div>
                 {member.description && (
                   <div className="md:col-span-2">
                     <p className="text-sm text-gray-500">Description</p>
-                    <p className="text-base font-medium text-gray-900">{member.description}</p>
+                    <p className="text-sm md:text-base font-medium text-gray-900">{member.description}</p>
                   </div>
                 )}
                 <div>
                   <p className="text-sm text-gray-500">Start Date</p>
-                  <p className="text-base font-medium text-gray-900">{formatDate(member.start_date)}</p>
+                  <p className="text-sm md:text-base font-medium text-gray-900">{formatDate(member.start_date)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">End Date</p>
-                  <p className="text-base font-medium text-gray-900">{formatDate(member.end_date)}</p>
+                  <p className="text-sm md:text-base font-medium text-gray-900">{formatDate(member.end_date)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Status</p>
@@ -217,8 +217,8 @@ export default function MemberDetailPage() {
 
             {/* Active Services Card */}
             {activeServices.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Package className="h-5 w-5" />
                   Active Services
                 </h2>
@@ -239,14 +239,14 @@ export default function MemberDetailPage() {
                     }
 
                     return (
-                      <div key={service.id} className="border border-gray-200 rounded-lg p-4">
+                      <div key={service.id} className="border border-gray-200 rounded-lg p-3 md:p-4">
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-gray-900">{service.service_name}</h3>
+                          <h3 className="text-sm md:text-base font-medium text-gray-900">{service.service_name}</h3>
                           <span className={`px-2 py-1 text-xs rounded-full ${statusColor}`}>
                             {isPT ? 'Personal Training' : 'Service'}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                           <div>
                             <p className="text-gray-500">Amount</p>
                             <p className="font-medium text-gray-900">{formatCurrency(service.amount)}</p>
@@ -269,14 +269,14 @@ export default function MemberDetailPage() {
 
             {/* Inactive Services Card */}
             {inactiveServices.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Service History</h2>
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Service History</h2>
                 <div className="space-y-2">
                   {inactiveServices.map((service) => (
                     <div key={service.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-medium text-gray-700">{service.service_name}</h3>
+                          <h3 className="text-sm md:text-base font-medium text-gray-700">{service.service_name}</h3>
                           <p className="text-sm text-gray-500">{formatCurrency(service.amount)}</p>
                         </div>
                         <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
@@ -292,8 +292,8 @@ export default function MemberDetailPage() {
 
           {/* Right Column - Invoices */}
           <div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
                 Invoices
               </h2>
@@ -305,7 +305,7 @@ export default function MemberDetailPage() {
                     <div key={invoice.id} className="border border-gray-200 rounded-lg p-3">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-medium text-gray-900">{invoice.invoice_number}</p>
+                          <p className="text-sm md:text-base font-medium text-gray-900">{invoice.invoice_number}</p>
                           <p className="text-xs text-gray-500">{formatDate(invoice.date)}</p>
                         </div>
                         <span className={`px-2 py-1 text-xs rounded-full ${

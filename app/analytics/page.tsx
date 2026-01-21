@@ -100,10 +100,10 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600 mt-1">Track your gym's performance and trends</p>
+      <div className="p-4 md:p-8">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Analytics</h1>
+          <p className="text-sm md:text-base text-gray-600 mt-1">Track your gym's performance and trends</p>
         </div>
 
         {loading ? (
@@ -113,28 +113,28 @@ export default function AnalyticsPage() {
         ) : (
           <>
             {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
                 <p className="text-sm text-gray-600 mb-1">Total Revenue (6 months)</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-xl md:text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
                 <p className="text-sm text-gray-600 mb-1">Average Monthly Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.averageRevenue)}</p>
+                <p className="text-xl md:text-2xl font-bold text-gray-900">{formatCurrency(stats.averageRevenue)}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
                 <p className="text-sm text-gray-600 mb-1">Total Members</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalMembers}</p>
+                <p className="text-xl md:text-2xl font-bold text-gray-900">{stats.totalMembers}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
                 <p className="text-sm text-gray-600 mb-1">Retention Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.retentionRate.toFixed(1)}%</p>
+                <p className="text-xl md:text-2xl font-bold text-gray-900">{stats.retentionRate.toFixed(1)}%</p>
               </div>
             </div>
 
             {/* Revenue Chart */}
-            <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Revenue</h2>
+            <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6 md:mb-8">
+              <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Monthly Revenue</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -150,8 +150,8 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Members Chart */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">New Members Trend</h2>
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+              <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4">New Members Trend</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" />

@@ -221,11 +221,11 @@ export default function InvoicesPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="flex justify-between items-center mb-8">
+      <div className="p-4 md:p-8">
+        <div className="flex justify-between items-center mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Invoices</h1>
-            <p className="text-gray-600 mt-1">View and manage payment invoices</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Invoices</h1>
+            <p className="text-sm md:text-base text-gray-600 mt-1">View and manage payment invoices</p>
           </div>
         </div>
 
@@ -257,17 +257,17 @@ export default function InvoicesPage() {
               {filteredGroupedInvoices.map((group) => (
                 <div key={group.memberId} className="bg-white">
                   {/* Member Header Row */}
-                  <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                  <div className="px-4 md:px-6 py-4 bg-gray-50 border-b border-gray-200">
                     <div className="flex items-center gap-3">
                       <div>
-                        <div className="font-semibold text-gray-900 text-lg">{group.memberName}</div>
+                        <div className="font-semibold text-gray-900 text-base md:text-lg">{group.memberName}</div>
                         <div className="text-sm text-gray-500">{group.memberPhone}</div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Invoice Details - Always Visible */}
-                  <div className="bg-white">
+                  {/* Invoice Details - Desktop Table View */}
+                  <div className="hidden md:block bg-white">
                     <table className="w-full">
                       <thead className="bg-gray-100">
                         <tr>
@@ -342,6 +342,60 @@ export default function InvoicesPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Invoice Details - Mobile Card View */}
+                  <div className="md:hidden bg-white divide-y divide-gray-200">
+                    {group.invoices.map((invoice) => (
+                      <div key={invoice.id} className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 mb-1">{invoice.invoice_number}</div>
+                            <div className="text-xs text-gray-500">{formatDate(invoice.date)}</div>
+                          </div>
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            invoice.payment_status === 'Paid'
+                              ? 'bg-green-100 text-green-800'
+                              : invoice.payment_status === 'Pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {invoice.payment_status}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 mb-3">
+                          <div className="text-xs">
+                            <span className="text-gray-500">Service Period:</span>
+                            <div className="text-gray-700 mt-1">
+                              {invoice.invoice_type === 'service' && invoice.servicePeriodStart && invoice.servicePeriodEnd ? (
+                                <div>
+                                  {formatDate(invoice.servicePeriodStart)} - {formatDate(invoice.servicePeriodEnd)}
+                                </div>
+                              ) : (
+                                <div>
+                                  {formatDate(invoice.members.start_date)} - {formatDate(invoice.members.end_date)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <div className="text-sm font-semibold text-gray-900">
+                              {formatCurrency(invoice.amount)}
+                            </div>
+                            <button
+                              onClick={() => handleDownloadPDF(invoice)}
+                              className="flex items-center gap-1 text-blue-600 hover:text-blue-900 text-sm font-medium"
+                              title="Download PDF"
+                            >
+                              <Download className="h-4 w-4" />
+                              <span>Download</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}

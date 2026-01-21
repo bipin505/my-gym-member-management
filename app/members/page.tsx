@@ -581,35 +581,37 @@ export default function MembersPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="flex justify-between items-center mb-8">
+      <div className="p-4 md:p-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Members</h1>
-            <p className="text-gray-600 mt-1">Manage your gym members</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Members</h1>
+            <p className="text-sm md:text-base text-gray-600 mt-1">Manage your gym members</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 md:gap-3">
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm md:text-base font-medium hover:bg-gray-50 transition-colors"
               title="Export to CSV"
             >
-              <Download className="h-5 w-5" />
-              Export CSV
+              <Download className="h-4 md:h-5 w-4 md:w-5" />
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">Export</span>
             </button>
             <button
               onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+              className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 rounded-lg text-white text-sm md:text-base font-medium transition-colors"
               style={{ backgroundColor: primaryColor }}
             >
-              <Plus className="h-5 w-5" />
-              Add Member
+              <Plus className="h-4 md:h-5 w-4 md:w-5" />
+              <span className="hidden sm:inline">Add Member</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow">
           <div className="p-4 border-b border-gray-200">
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -617,14 +619,14 @@ export default function MembersPage() {
                   placeholder="Search members by name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm md:text-base"
                 />
               </div>
-              <div className="w-48">
+              <div className="w-full md:w-48">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm md:text-base"
                 >
                   <option value="all">All Members</option>
                   <option value="active">Active</option>
@@ -644,136 +646,255 @@ export default function MembersPage() {
               <p className="text-gray-500">No members found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Plan
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Start Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      End Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredMembers.map((member) => {
-                    const daysUntilExpiry = Math.ceil(
-                      (new Date(member.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                    )
-                    const isExpired = daysUntilExpiry < 0
-                    const isExpiring = daysUntilExpiry <= 7 && daysUntilExpiry >= 0
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Plan
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Description
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Start Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        End Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredMembers.map((member) => {
+                      const daysUntilExpiry = Math.ceil(
+                        (new Date(member.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                      )
+                      const isExpired = daysUntilExpiry < 0
+                      const isExpiring = daysUntilExpiry <= 7 && daysUntilExpiry >= 0
 
-                    return (
-                      <tr key={member.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">{member.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {member.phone}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {member.plan_type}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                          {member.description || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(member.start_date)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(member.end_date)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                          {formatCurrency(member.amount)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {isExpired ? (
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                              Expired
-                            </span>
-                          ) : member.is_active ? (
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              isExpiring
-                                ? 'bg-orange-100 text-orange-800'
-                                : 'bg-green-100 text-green-800'
-                            }`}>
-                              {isExpiring ? 'Expiring Soon' : 'Active'}
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                              Inactive
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => router.push(`/members/${member.id}`)}
-                              className="text-indigo-600 hover:text-indigo-900"
-                              title="View details"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            {(isExpired || (member.is_active && isExpiring)) && (
-                              <button
-                                onClick={() => openRenewModal(member)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Renew membership"
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </button>
+                      return (
+                        <tr key={member.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="font-medium text-gray-900">{member.name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {member.phone}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {member.plan_type}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                            {member.description || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(member.start_date)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(member.end_date)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                            {formatCurrency(member.amount)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {isExpired ? (
+                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                Expired
+                              </span>
+                            ) : member.is_active ? (
+                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                isExpiring
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {isExpiring ? 'Expiring Soon' : 'Active'}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                Inactive
+                              </span>
                             )}
-                            <button
-                              onClick={() => openAddServiceModal(member)}
-                              className="text-purple-600 hover:text-purple-900"
-                              title="Add service"
-                            >
-                              <PlusCircle className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => openEditModal(member)}
-                              className="text-blue-600 hover:text-blue-900"
-                              title="Edit member"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(member.id)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete member"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => router.push(`/members/${member.id}`)}
+                                className="text-indigo-600 hover:text-indigo-900"
+                                title="View details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              {(isExpired || (member.is_active && isExpiring)) && (
+                                <button
+                                  onClick={() => openRenewModal(member)}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Renew membership"
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => openAddServiceModal(member)}
+                                className="text-purple-600 hover:text-purple-900"
+                                title="Add service"
+                              >
+                                <PlusCircle className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => openEditModal(member)}
+                                className="text-blue-600 hover:text-blue-900"
+                                title="Edit member"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(member.id)}
+                                className="text-red-600 hover:text-red-900"
+                                title="Delete member"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden">
+                {filteredMembers.map((member) => {
+                  const daysUntilExpiry = Math.ceil(
+                    (new Date(member.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                  )
+                  const isExpired = daysUntilExpiry < 0
+                  const isExpiring = daysUntilExpiry <= 7 && daysUntilExpiry >= 0
+
+                  return (
+                    <div key={member.id} className="p-4 border-b border-gray-200 last:border-b-0">
+                      {/* Member name and status badge */}
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="font-semibold text-base text-gray-900">{member.name}</div>
+                        {isExpired ? (
+                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Expired
+                          </span>
+                        ) : member.is_active ? (
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            isExpiring
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {isExpiring ? 'Expiring Soon' : 'Active'}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Phone and plan type */}
+                      <div className="space-y-2 mb-3">
+                        <div className="text-sm">
+                          <span className="text-gray-500">Phone:</span>
+                          <span className="text-gray-900 ml-2">{member.phone}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-gray-500">Plan:</span>
+                          <span className="text-gray-900 ml-2">{member.plan_type}</span>
+                        </div>
+                      </div>
+
+                      {/* Description if exists */}
+                      {member.description && (
+                        <div className="text-sm mb-3">
+                          <span className="text-gray-500">Description:</span>
+                          <div className="text-gray-900 mt-1">{member.description}</div>
+                        </div>
+                      )}
+
+                      {/* Date range */}
+                      <div className="text-sm mb-3">
+                        <span className="text-gray-500">Period:</span>
+                        <div className="text-gray-900 mt-1">
+                          {formatDate(member.start_date)} - {formatDate(member.end_date)}
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="text-sm font-semibold text-gray-900 mb-3">
+                        Amount: {formatCurrency(member.amount)}
+                      </div>
+
+                      {/* Action buttons in grid layout */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => router.push(`/members/${member.id}`)}
+                          className="flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"
+                          title="View details"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View
+                        </button>
+                        <button
+                          onClick={() => openAddServiceModal(member)}
+                          className="flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100"
+                          title="Add service"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          Service
+                        </button>
+                        {(isExpired || (member.is_active && isExpiring)) && (
+                          <button
+                            onClick={() => openRenewModal(member)}
+                            className="flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100"
+                            title="Renew membership"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            Renew
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openEditModal(member)}
+                          className="flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
+                          title="Edit member"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(member.id)}
+                          className="flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 col-span-2"
+                          title="Delete member"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete Member
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

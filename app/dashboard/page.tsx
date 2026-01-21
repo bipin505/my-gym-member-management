@@ -165,10 +165,10 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's your gym overview.</p>
+      <div className="p-4 md:p-8">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm md:text-base text-gray-600 mt-1">Welcome back! Here's your gym overview.</p>
         </div>
 
         {loading ? (
@@ -177,27 +177,27 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
               {statCards.map((stat) => (
-                <div key={stat.title} className="bg-white rounded-lg shadow p-6">
+                <div key={stat.title} className="bg-white rounded-lg shadow p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                      <p className="text-xs md:text-sm text-gray-600 mb-1">{stat.title}</p>
+                      <p className="text-xl md:text-2xl font-bold text-gray-900">{stat.value}</p>
                     </div>
-                    <div className={`${stat.color} p-3 rounded-lg`}>
-                      <stat.icon className="h-6 w-6 text-white" />
+                    <div className={`${stat.color} p-2 md:p-3 rounded-lg`}>
+                      <stat.icon className="h-5 w-5 md:h-6 md:w-6 text-white" />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Cake className="h-5 w-5 text-pink-500" />
-                  <h2 className="text-lg font-semibold text-gray-900">Today's Birthdays</h2>
+                  <h2 className="text-base md:text-lg font-semibold text-gray-900">Today's Birthdays</h2>
                 </div>
                 {birthdayMembers.length === 0 ? (
                   <p className="text-sm text-gray-500">No birthdays today</p>
@@ -216,15 +216,15 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Dumbbell className="h-5 w-5 text-green-500" />
-                    <h2 className="text-lg font-semibold text-gray-900">PT Members ({ptMembers.length})</h2>
+                    <h2 className="text-base md:text-lg font-semibold text-gray-900">PT Members ({ptMembers.length})</h2>
                   </div>
                   <Link
                     href="/pt-members"
-                    className="text-sm font-medium hover:underline"
+                    className="text-xs md:text-sm font-medium hover:underline"
                     style={{ color: primaryColor }}
                   >
                     View All →
@@ -302,25 +302,25 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
+                <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
                 <div className="space-y-3">
                   <Link
                     href="/members?action=add"
-                    className="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                    className="block px-3 md:px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors"
                     style={{
                       borderColor: primaryColor + '20',
                     }}
                   >
-                    <p className="font-medium text-gray-900">Add New Member</p>
-                    <p className="text-sm text-gray-600">Register a new gym member</p>
+                    <p className="text-sm md:text-base font-medium text-gray-900">Add New Member</p>
+                    <p className="text-xs md:text-sm text-gray-600">Register a new gym member</p>
                   </Link>
                   <Link
                     href="/invoices"
-                    className="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                    className="block px-3 md:px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors"
                   >
-                    <p className="font-medium text-gray-900">View Invoices</p>
-                    <p className="text-sm text-gray-600">Check payment records</p>
+                    <p className="text-sm md:text-base font-medium text-gray-900">View Invoices</p>
+                    <p className="text-xs md:text-sm text-gray-600">Check payment records</p>
                   </Link>
                 </div>
               </div>

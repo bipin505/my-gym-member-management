@@ -128,17 +128,17 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your gym profile and branding</p>
+      <div className="p-4 md:p-8">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Settings</h1>
+          <p className="text-sm md:text-base text-gray-600 mt-1">Manage your gym profile and branding</p>
         </div>
 
         <div className="max-w-2xl">
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Gym Logo</h2>
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Gym Logo</h2>
 
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
               {logoUrl ? (
                 <div className="relative w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden">
                   <Image
@@ -177,8 +177,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Gym Information</h2>
+          <div className="bg-white rounded-lg shadow p-4 md:p-6">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Gym Information</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -253,12 +253,12 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Primary Color
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                   <input
                     type="color"
                     value={formData.primaryColor}
                     onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                    className="h-10 w-20 rounded border border-gray-300 cursor-pointer"
+                    className="h-10 w-full sm:w-20 rounded border border-gray-300 cursor-pointer"
                   />
                   <input
                     type="text"
@@ -277,12 +277,12 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Secondary Color
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                   <input
                     type="color"
                     value={formData.secondaryColor}
                     onChange={(e) => setFormData({ ...formData, secondaryColor: e.target.value })}
-                    className="h-10 w-20 rounded border border-gray-300 cursor-pointer"
+                    className="h-10 w-full sm:w-20 rounded border border-gray-300 cursor-pointer"
                   />
                   <input
                     type="text"
@@ -310,22 +310,24 @@ export default function SettingsPage() {
             </form>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 mt-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Preview</h2>
-            <div className="border-2 border-gray-200 rounded-lg p-6">
-              <div
-                className="px-6 py-3 rounded-lg text-white font-medium inline-block mb-4"
-                style={{ backgroundColor: formData.primaryColor }}
-              >
-                Sample Button
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 mt-6">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Preview</h2>
+            <div className="border-2 border-gray-200 rounded-lg p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
+                <div
+                  className="px-6 py-3 rounded-lg text-white font-medium text-center"
+                  style={{ backgroundColor: formData.primaryColor }}
+                >
+                  Sample Button
+                </div>
+                <div
+                  className="px-6 py-3 rounded-lg text-white font-medium text-center"
+                  style={{ backgroundColor: formData.secondaryColor }}
+                >
+                  Secondary Button
+                </div>
               </div>
-              <div
-                className="px-6 py-3 rounded-lg text-white font-medium inline-block ml-4"
-                style={{ backgroundColor: formData.secondaryColor }}
-              >
-                Secondary Button
-              </div>
-              <p className="text-gray-600 mt-4">
+              <p className="text-sm md:text-base text-gray-600">
                 This is how your brand colors will appear in the application.
               </p>
             </div>

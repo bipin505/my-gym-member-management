@@ -238,18 +238,18 @@ export default function PTMembersPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="mb-8">
+      <div className="p-4 md:p-8">
+        <div className="mb-6 md:mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <Dumbbell className="h-8 w-8" style={{ color: primaryColor }} />
-            <h1 className="text-3xl font-bold text-gray-900">PT Members</h1>
+            <Dumbbell className="h-6 w-6 md:h-8 md:w-8" style={{ color: primaryColor }} />
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">PT Members</h1>
           </div>
-          <p className="text-gray-600">Track and manage Personal Training memberships</p>
+          <p className="text-sm md:text-base text-gray-600">Track and manage Personal Training memberships</p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="bg-white rounded-lg shadow p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total PT Members</p>
@@ -261,7 +261,7 @@ export default function PTMembersPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Active</p>
@@ -273,7 +273,7 @@ export default function PTMembersPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 border-2 border-orange-200">
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 border-2 border-orange-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Expiring Soon</p>
@@ -285,7 +285,7 @@ export default function PTMembersPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Expired</p>
@@ -343,97 +343,156 @@ export default function PTMembersPage() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Member
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Service
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Duration
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredMembers.map((member) => (
-                    <tr
-                      key={member.id}
-                      className={`hover:bg-gray-50 ${
-                        member.status === 'expiring-soon' ? 'bg-orange-50' :
-                        member.status === 'expired' ? 'bg-red-50' : ''
-                      }`}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-gray-100 p-2 rounded-full">
-                            <User className="h-5 w-5 text-gray-600" />
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">{member.member_name}</div>
-                            <div className="flex items-center gap-1 text-sm text-gray-500">
-                              <Phone className="h-3 w-3" />
-                              {member.member_phone}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 font-medium">{member.service_name}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {member.start_date && (
-                            <div className="flex items-center gap-1 mb-1">
-                              <Calendar className="h-3 w-3 text-gray-400" />
-                              <span className="font-medium">Start:</span> {formatDate(member.start_date)}
-                            </div>
-                          )}
-                          {member.end_date && (
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3 text-gray-400" />
-                              <span className="font-medium">End:</span> {formatDate(member.end_date)}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(member.amount)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {getStatusBadge(member)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {(member.status === 'expiring-soon' || member.status === 'expired') && (
-                          <button
-                            onClick={() => openRenewModal(member)}
-                            className="inline-flex items-center gap-1 text-green-600 hover:text-green-900"
-                            title="Renew PT service"
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                            <span>Renew</span>
-                          </button>
-                        )}
-                      </td>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Member
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Service
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Duration
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredMembers.map((member) => (
+                      <tr
+                        key={member.id}
+                        className={`hover:bg-gray-50 ${
+                          member.status === 'expiring-soon' ? 'bg-orange-50' :
+                          member.status === 'expired' ? 'bg-red-50' : ''
+                        }`}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-gray-100 p-2 rounded-full">
+                              <User className="h-5 w-5 text-gray-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">{member.member_name}</div>
+                              <div className="flex items-center gap-1 text-sm text-gray-500">
+                                <Phone className="h-3 w-3" />
+                                {member.member_phone}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 font-medium">{member.service_name}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {member.start_date && (
+                              <div className="flex items-center gap-1 mb-1">
+                                <Calendar className="h-3 w-3 text-gray-400" />
+                                <span className="font-medium">Start:</span> {formatDate(member.start_date)}
+                              </div>
+                            )}
+                            {member.end_date && (
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3 text-gray-400" />
+                                <span className="font-medium">End:</span> {formatDate(member.end_date)}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-semibold text-gray-900">
+                            {formatCurrency(member.amount)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {getStatusBadge(member)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          {(member.status === 'expiring-soon' || member.status === 'expired') && (
+                            <button
+                              onClick={() => openRenewModal(member)}
+                              className="inline-flex items-center gap-1 text-green-600 hover:text-green-900"
+                              title="Renew PT service"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                              <span>Renew</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-gray-200">
+                {filteredMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className={`p-4 ${
+                      member.status === 'expiring-soon' ? 'bg-orange-50' :
+                      member.status === 'expired' ? 'bg-red-50' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-gray-100 p-2 rounded-full">
+                          <User className="h-4 w-4 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 text-sm">{member.member_name}</div>
+                          <div className="text-xs text-gray-500">{member.service_name}</div>
+                        </div>
+                      </div>
+                      {getStatusBadge(member)}
+                    </div>
+
+                    <div className="space-y-2 text-sm mb-3">
+                      <div className="flex items-center gap-1 text-gray-600">
+                        <Phone className="h-3 w-3" />
+                        <span>{member.member_phone}</span>
+                      </div>
+
+                      {member.start_date && member.end_date && (
+                        <div className="text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatDate(member.start_date)} - {formatDate(member.end_date)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="font-semibold text-gray-900">
+                        {formatCurrency(member.amount)}
+                      </div>
+                    </div>
+
+                    {(member.status === 'expiring-soon' || member.status === 'expired') && (
+                      <button
+                        onClick={() => openRenewModal(member)}
+                        className="w-full inline-flex items-center justify-center gap-1 px-4 py-2 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        <span>Renew PT Service</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
@@ -458,8 +517,8 @@ export default function PTMembersPage() {
       {/* Renew PT Modal */}
       {showRenewModal && renewingPT && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-4 md:p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
               Renew PT Service - {renewingPT.member_name}
             </h2>
             <form onSubmit={handleRenewPT} className="space-y-4">
