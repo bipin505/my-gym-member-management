@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { createClient } from '@/utils/supabase/client'
 import { useGymBranding } from '@/hooks/useGymBranding'
-import { Download, Search, FileText } from 'lucide-react'
+import { Download, Search, FileText, MessageCircle } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/utils/date'
 import { generateInvoicePDF, downloadPDF } from '@/utils/pdf'
 import { Database } from '@/types/database.types'
@@ -218,6 +218,24 @@ export default function InvoicesPage() {
     }
   }
 
+  function handleWhatsAppSend(invoice: Invoice) {
+    const message = `Hello ${invoice.members.name},
+
+Your invoice is ready!
+
+Invoice No: ${invoice.invoice_number}
+Date: ${formatDate(invoice.date)}
+Amount: ${formatCurrency(invoice.amount)}
+Service Period: ${formatDate(invoice.members.start_date)} to ${formatDate(invoice.members.end_date)}
+
+Thank you for being a valued member of ${name}!`
+
+    const encodedMessage = encodeURIComponent(message)
+    const whatsappUrl = `https://wa.me/${invoice.members.phone}?text=${encodedMessage}`
+
+    window.open(whatsappUrl, '_blank')
+  }
+
 
   return (
     <DashboardLayout>
@@ -330,13 +348,22 @@ export default function InvoicesPage() {
                               </span>
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
-                              <button
-                                onClick={() => handleDownloadPDF(invoice)}
-                                className="text-blue-600 hover:text-blue-900"
-                                title="Download PDF"
-                              >
-                                <Download className="h-4 w-4" />
-                              </button>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => handleDownloadPDF(invoice)}
+                                  className="text-blue-600 hover:text-blue-900"
+                                  title="Download PDF"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleWhatsAppSend(invoice)}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Send via WhatsApp"
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -384,14 +411,24 @@ export default function InvoicesPage() {
                             <div className="text-sm font-semibold text-gray-900">
                               {formatCurrency(invoice.amount)}
                             </div>
-                            <button
-                              onClick={() => handleDownloadPDF(invoice)}
-                              className="flex items-center gap-1 text-blue-600 hover:text-blue-900 text-sm font-medium"
-                              title="Download PDF"
-                            >
-                              <Download className="h-4 w-4" />
-                              <span>Download</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleDownloadPDF(invoice)}
+                                className="flex items-center gap-1 text-blue-600 hover:text-blue-900 text-sm font-medium"
+                                title="Download PDF"
+                              >
+                                <Download className="h-4 w-4" />
+                                <span>Download</span>
+                              </button>
+                              <button
+                                onClick={() => handleWhatsAppSend(invoice)}
+                                className="flex items-center gap-1 text-green-600 hover:text-green-900 text-sm font-medium"
+                                title="Send via WhatsApp"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                <span>WhatsApp</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
